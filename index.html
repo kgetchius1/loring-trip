@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loring Trip — Lodging Assignments</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #161b27;
+    --surface2: #1e2535;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #7a8299;
+    --accent: #4f8ef7;
+    --accent-dim: rgba(79,142,247,0.12);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.12);
+    --pink: #f06292;
+    --pink-dim: rgba(240,98,146,0.12);
+    --amber: #ffb74d;
+    --amber-dim: rgba(255,183,77,0.1);
+    --red: #ef5350;
+    --radius: 10px;
+    --font: 'Barlow', sans-serif;
+    --font-display: 'Barlow Condensed', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; min-height: 100vh; }
+
+  /* LOADING */
+  #loading { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; gap: 16px; }
+  .spinner { width: 36px; height: 36px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { color: var(--muted); font-size: 14px; }
+
+  /* LOGIN */
+  #login-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 90; align-items: center; justify-content: center; }
+  #login-screen.active { display: flex; }
+  .login-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 420px; margin: 16px; }
+  .login-logo { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: 0.04em; color: var(--text); margin-bottom: 4px; }
+  .login-sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  .login-box label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; display: block; margin-bottom: 8px; }
+  .search-wrap { position: relative; }
+  .search-wrap input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 11px 14px; color: var(--text); font-family: var(--font); font-size: 15px; outline: none; }
+  .search-wrap input:focus { border-color: var(--accent); }
+  #name-results { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; z-index: 10; }
+  .name-opt { padding: 10px 14px; cursor: pointer; font-size: 14px; transition: background 0.15s; }
+  .name-opt:hover { background: var(--accent-dim); color: var(--accent); }
+  .btn-primary { width: 100%; margin-top: 20px; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: var(--font); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* MAIN APP */
+  #app { display: none; }
+  #app.active { display: block; }
+
+  /* HEADER */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; position: sticky; top: 0; z-index: 50; }
+  .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .header-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: 0.04em; }
+  .header-title span { color: var(--accent); }
+  .header-user { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-dim); border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--accent); }
+  .user-name { font-size: 13px; color: var(--muted); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-logout { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .btn-logout:hover { color: var(--text); background: var(--surface2); }
+
+  /* MY CARD */
+  .my-card { background: linear-gradient(135deg, #1a2340 0%, #1e2535 100%); border: 1px solid var(--accent); border-radius: 14px; padding: 20px 22px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .my-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; background: var(--accent); opacity: 0.04; border-radius: 50%; }
+  .my-card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 10px; }
+  .my-card-name { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 14px; }
+  .my-nights { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .night-block { background: rgba(0,0,0,0.25); border-radius: 8px; padding: 12px 14px; }
+  .night-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .night-loc { font-size: 16px; font-weight: 600; color: var(--text); }
+  .night-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .swap-btn { margin-top: 14px; width: 100%; padding: 10px; background: rgba(79,142,247,0.15); border: 1px solid rgba(79,142,247,0.35); border-radius: var(--radius); color: var(--accent); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .swap-btn:hover { background: rgba(79,142,247,0.25); }
+
+  /* MAIN CONTENT */
+  main { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; }
+  .tab { flex: 1; padding: 8px 4px; background: none; border: none; border-radius: 7px; color: var(--muted); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .tab.active { background: var(--surface2); color: var(--text); }
+
+  /* SECTION LABEL */
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 20px 0 10px; }
+
+  /* ROOMS GRID */
+  .rooms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .room-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; transition: border-color 0.15s; }
+  .room-card.girls { border-color: rgba(240,98,146,0.4); background: linear-gradient(135deg, #1e1826, #1e2535); }
+  .room-card.mine { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(79,142,247,0.2); }
+  .room-num { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 600; }
+  .badge-pink { background: var(--pink-dim); color: var(--pink); }
+  .badge-blue { background: var(--accent-dim); color: var(--accent); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .person-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .person-row:last-child { margin-bottom: 0; }
+  .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .av-blue { background: var(--accent-dim); color: var(--accent); }
+  .av-pink { background: var(--pink-dim); color: var(--pink); }
+  .av-teal { background: var(--green-dim); color: var(--green); }
+  .av-gray { background: rgba(255,255,255,0.06); color: var(--muted); }
+  .av-amber { background: var(--amber-dim); color: var(--amber); }
+  .pname { font-size: 12px; color: var(--text); line-height: 1.2; }
+  .pname.is-me { color: var(--accent); font-weight: 600; }
+  .solo-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* TENT */
+  .tent-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .tent-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .tent-icon { font-size: 20px; }
+  .tent-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+  .tent-count { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .tent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+  .tent-person { display: flex; align-items: center; gap: 7px; padding: 6px 9px; background: var(--surface2); border-radius: 7px; }
+  .tent-person.is-me { background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); }
+
+  /* PEOPLE LOOKUP */
+  .lookup-search { width: 100%; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 14px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; margin-bottom: 12px; }
+  .lookup-search:focus { border-color: var(--accent); }
+  .lookup-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .lookup-row:last-child { border-bottom: none; }
+  .lookup-name { flex: 1; font-size: 13px; min-width: 140px; }
+  .lookup-loc { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .lookup-loc b { color: var(--text); }
+
+  /* SWAP REQUESTS (admin) */
+  .request-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+  .req-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .req-name { font-weight: 600; font-size: 14px; }
+  .req-time { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .req-note { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .req-actions { display: flex; gap: 8px; }
+  .btn-approve { padding: 6px 14px; background: var(--green-dim); border: 1px solid rgba(62,207,142,0.3); border-radius: 7px; color: var(--green); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-deny { padding: 6px 14px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.25); border-radius: 7px; color: var(--red); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .status-badge { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 600; }
+  .status-pending { background: var(--amber-dim); color: var(--amber); }
+  .status-approved { background: var(--green-dim); color: var(--green); }
+  .status-denied { background: rgba(239,83,80,0.1); color: var(--red); }
+  .empty-state { padding: 32px 0; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* SWAP MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 28px 24px; width: 100%; max-width: 420px; }
+  .modal h3 { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+  .modal textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 12px; color: var(--text); font-family: var(--font); font-size: 14px; resize: vertical; min-height: 90px; outline: none; }
+  .modal textarea:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-cancel { flex: 1; padding: 10px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--muted); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-submit { flex: 2; padding: 10px; background: var(--accent); border: none; border-radius: var(--radius); color: #fff; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-submit:disabled { opacity: 0.4; }
+
+  /* SWAP BANNER */
+  .swap-banner { background: var(--amber-dim); border: 1px solid rgba(255,183,77,0.2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .swap-banner-text { font-size: 13px; color: var(--amber); font-weight: 600; }
+
+  /* REQUEST OPTIONS */
+  .req-options { display: flex; flex-direction: column; gap: 8px; }
+  .req-option { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .req-option:hover { border-color: rgba(79,142,247,0.4); }
+  .req-option.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .req-option-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .req-option-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .req-option-desc { font-size: 12px; color: var(--muted); }
+  .req-select-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; display: block; }
+  .req-select { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 12px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; }
+  .req-select:focus { border-color: var(--accent); }
+
+  /* NIGHT GROUP PILLS */
+  .night-pills { display: flex; gap: 6px; }
+  .night-pill { flex: 1; padding: 9px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--muted); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .night-pill.active { background: var(--accent-dim); border-color: rgba(79,142,247,0.5); color: var(--accent); }
+
+  /* LOGIN — placeholder hint + admin collapse */
+  #name-search::placeholder { color: rgba(255,255,255,0.18); font-style: italic; }
+  .or-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0 14px; color: var(--muted); font-size: 12px; }
+  .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+  .admin-toggle { width: 100%; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--muted); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+  .admin-toggle:hover { border-color: rgba(79,142,247,0.4); color: var(--text); }
+  .admin-collapse { display: none; margin-top: 10px; }
+  .admin-collapse.open { display: block; }
+  .admin-field { margin-bottom: 10px; }
+  .admin-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 12px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; }
+  .admin-field input:focus { border-color: var(--accent); }
+  .admin-login-error { font-size: 12px; color: var(--red); margin-top: 6px; display: none; }
+  .btn-admin-signin { width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--accent); border-radius: var(--radius); color: var(--accent); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-admin-signin:hover { background: var(--accent-dim); }
+
+  /* ADMIN PILLS */
+  .admin-tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .admin-sub-tab { padding: 7px 16px; background: none; border: 1px solid var(--border2); border-radius: 99px; color: var(--muted); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .admin-sub-tab.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(79,142,247,0.4); }
+
+  /* REQUESTS — modify inline */
+  .btn-ignore { padding: 6px 12px; background: rgba(122,130,153,0.1); border: 1px solid rgba(122,130,153,0.2); border-radius: 7px; color: var(--muted); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-modify { padding: 6px 12px; background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); border-radius: 7px; color: var(--accent); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .req-modify-area { display: none; margin-top: 10px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px; }
+  .req-modify-area.open { display: block; }
+  .req-modify-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .req-modify-textarea { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 7px; padding: 8px 10px; color: var(--text); font-family: var(--font); font-size: 13px; resize: vertical; min-height: 70px; outline: none; margin-bottom: 10px; }
+  .req-modify-textarea:focus { border-color: var(--accent); }
+  .req-modify-select { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 7px; padding: 8px 10px; color: var(--text); font-family: var(--font); font-size: 13px; outline: none; margin-bottom: 10px; }
+  .req-modify-select:focus { border-color: var(--accent); }
+  .btn-save-req { padding: 7px 16px; background: var(--green-dim); border: 1px solid rgba(62,207,142,0.3); border-radius: 7px; color: var(--green); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .status-ignored { background: rgba(122,130,153,0.1); color: var(--muted); }
+
+  /* LEGACY APPROVE PANEL */
+  .legacy-approve-panel { background: var(--surface2); border: 1px solid rgba(255,183,77,0.3); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+  .legacy-approve-msg { font-size: 13px; color: var(--amber); font-weight: 600; margin-bottom: 0; }
+
+  /* ROOMS ADMIN */
+  .room-mgmt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .room-mgmt-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .room-mgmt-card.girls-card { border-color: rgba(240,98,146,0.35); background: linear-gradient(135deg, #1e1826, #1e2535); }
+  .room-mgmt-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .room-night-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 8px 0 4px; }
+  .occ-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+  .occ-name { flex: 1; font-size: 12px; }
+  .btn-rm-occ { background: none; border: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 0 2px; line-height: 1; }
+  .btn-rm-occ:hover { color: var(--red); }
+  .room-add-wrap { margin-top: 8px; display: flex; gap: 4px; }
+  .room-add-select { flex: 1; background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 5px 8px; color: var(--text); font-family: var(--font); font-size: 11px; outline: none; min-width: 0; }
+  .room-add-select:focus { border-color: var(--accent); }
+  .btn-add-occ { padding: 5px 10px; background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); border-radius: 7px; color: var(--accent); font-family: var(--font); font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .girls-lock { font-size: 11px; color: var(--pink); margin-top: 6px; }
+
+  /* PEOPLE ADMIN */
+  .people-mgmt-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .people-mgmt-row:last-child { border-bottom: none; }
+  .pmgmt-name { flex: 1; font-size: 13px; min-width: 150px; font-weight: 500; }
+  .pmgmt-loc { font-size: 12px; color: var(--muted); min-width: 70px; }
+  .pmgmt-loc b { color: var(--text); }
+  .btn-edit-person { padding: 5px 12px; background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); border-radius: 7px; color: var(--accent); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+  .person-edit-row { width: 100%; padding: 8px 0 2px; display: none; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .person-edit-row.open { display: flex; }
+  .pedit-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .pedit-select { background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 6px 10px; color: var(--text); font-family: var(--font); font-size: 12px; outline: none; }
+  .pedit-select:focus { border-color: var(--accent); }
+  .btn-save-person { padding: 6px 14px; background: var(--green-dim); border: 1px solid rgba(62,207,142,0.3); border-radius: 7px; color: var(--green); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+  .girls-warn { font-size: 11px; color: var(--pink); width: 100%; }
+
+  /* ADD MEMBER */
+  .add-member-btn { padding: 7px 16px; background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); border-radius: 99px; color: var(--accent); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .add-member-form { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none; }
+  .add-member-form.open { display: block; }
+  .add-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  .add-form-field { display: flex; flex-direction: column; gap: 5px; }
+  .add-form-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .add-form-input { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 9px 12px; color: var(--text); font-family: var(--font); font-size: 13px; outline: none; }
+  .add-form-input:focus { border-color: var(--accent); }
+  option:disabled { color: var(--muted); }
+
+  /* VIEW */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 18px; font-size: 13px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+
+  @media (max-width: 480px) {
+    .rooms-grid { grid-template-columns: repeat(2, 1fr); }
+    .my-nights { grid-template-columns: 1fr; }
+    .header-user .user-name { display: none; }
+  }
+
+  /* CONFLICT PANEL */
+  #conflict-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  #conflict-backdrop.open { opacity: 1; pointer-events: auto; }
+  #conflict-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 420px; background: var(--surface); border-left: 1px solid var(--border2); z-index: 301; display: flex; flex-direction: column; transform: translateX(105%); transition: transform 0.25s ease; overflow: hidden; }
+  #conflict-panel.open { transform: translateX(0); }
+  .cp-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .cp-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+  .cp-subtitle { font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .cp-close { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+  .cp-close:hover { color: var(--text); }
+  .cp-body { flex: 1; overflow-y: auto; padding: 16px 20px 32px; }
+  .cp-occ-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid transparent; border-radius: var(--radius); margin-bottom: 6px; }
+  .cp-occ-row.cp-selected { border-color: var(--accent); background: var(--accent-dim); }
+  .btn-swap-out { padding: 5px 12px; background: none; border: 1px solid var(--border2); border-radius: 7px; color: var(--muted); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
+  .btn-swap-out:hover, .cp-occ-row.cp-selected .btn-swap-out { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 480px) {
+    #conflict-panel { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-height: 85vh; border-left: none; border-top: 1px solid var(--border2); border-radius: 14px 14px 0 0; transform: translateY(105%); }
+    #conflict-panel.open { transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Loading trip data...</p>
+</div>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+      <div class="login-logo">LORING TRIP</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <img src="260CaosNoBg.png" style="width:52px;height:52px;object-fit:contain">
+        <span style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:0.07em;text-transform:uppercase">260th CAOS</span>
+      </div>
+    </div>
+    <div class="login-sub">Lodging assignments &amp; room management</div>
+    <label>Who are you?</label>
+    <div class="search-wrap">
+      <input type="text" id="name-search" placeholder="Last, First" autocomplete="off" oninput="filterNames(this.value)">
+      <div id="name-results"></div>
+    </div>
+    <button class="btn-primary" id="login-btn" disabled onclick="doLogin()">View My Assignment →</button>
+    <div class="or-divider">or</div>
+    <button class="admin-toggle" onclick="toggleAdminSection()">
+      🔒 Admin Login
+    </button>
+    <div class="admin-collapse" id="admin-collapse">
+      <div class="admin-field">
+        <input type="text" id="admin-username" placeholder="Admin username" autocomplete="off">
+      </div>
+      <div class="admin-field">
+        <input type="password" id="admin-password" placeholder="Password">
+      </div>
+      <div class="admin-login-error" id="admin-login-error"></div>
+      <button class="btn-admin-signin" onclick="doAdminLogin()">Sign in as Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <header>
+    <div class="header-inner">
+      <div class="header-title">LORING <span>TRIP</span></div>
+      <div class="header-user">
+        <div class="user-avatar" id="header-avatar"></div>
+        <div class="user-name" id="header-name"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:1px;margin-left:4px">
+          <img src="260CaosNoBg.png" style="width:32px;height:32px;object-fit:contain">
+          <span style="font-size:8px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;line-height:1">260th CAOS</span>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- My assignment card -->
+    <div id="my-card-section"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('nights12',this)">Nights 1–2</button>
+      <button class="tab" onclick="showTab('nights34',this)">Nights 3–4</button>
+      <button class="tab" onclick="showTab('lookup',this)">Lookup</button>
+      <button class="tab" id="admin-tab" style="display:none" onclick="showTab('admin',this)">Admin</button>
+    </div>
+
+    <div id="nights12" class="view active"></div>
+    <div id="nights34" class="view"></div>
+    <div id="lookup" class="view">
+      <input type="search" class="lookup-search" placeholder="Search by name..." oninput="filterLookup(this.value)" id="lookup-input">
+      <div id="lookup-list"></div>
+    </div>
+    <div id="admin" class="view">
+      <div class="admin-tabs">
+        <button class="admin-sub-tab active" id="atab-requests" onclick="showAdminTab('requests')">Requests</button>
+        <button class="admin-sub-tab" id="atab-rooms" onclick="showAdminTab('rooms')">Rooms</button>
+        <button class="admin-sub-tab" id="atab-people" onclick="showAdminTab('people')">People</button>
+      </div>
+      <div id="admin-requests"><div id="requests-list"></div></div>
+      <div id="admin-rooms" style="display:none"></div>
+      <div id="admin-people" style="display:none"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Swap Modal -->
+<div class="modal-overlay" id="swap-modal">
+  <div class="modal">
+    <h3>Request a Change</h3>
+    <p>Select your preference. The superintendent will review it — this does not guarantee a change.</p>
+    <div class="req-options">
+      <div class="req-option" id="opt-hotel" onclick="selectReqOption('hotel')">
+        <span class="req-option-icon">🏨</span>
+        <div>
+          <div class="req-option-title">Stay in hotel all nights</div>
+          <div class="req-option-desc">Keep me in a hotel room for nights 3–4 instead of moving to tent</div>
+        </div>
+      </div>
+      <div class="req-option" id="opt-tent" onclick="selectReqOption('tent')">
+        <span class="req-option-icon">⛺</span>
+        <div>
+          <div class="req-option-title">Stay in tent all nights</div>
+          <div class="req-option-desc">Move me to the tent for nights 1–2 instead of a hotel room</div>
+        </div>
+      </div>
+      <div class="req-option" id="opt-roommate" onclick="selectReqOption('roommate')">
+        <span class="req-option-icon">👥</span>
+        <div>
+          <div class="req-option-title">Change roommate</div>
+          <div class="req-option-desc">Request to room with a specific person</div>
+        </div>
+      </div>
+    </div>
+    <div id="roommate-select-wrap" style="display:none; margin-top:12px">
+      <span class="req-select-label">Who would you like to room with?</span>
+      <select id="roommate-select" class="req-select" onchange="checkSwapReady()">
+        <option value="">Select a person...</option>
+      </select>
+    </div>
+    <div style="margin-top:14px">
+      <span class="req-select-label">Which nights?</span>
+      <div class="night-pills">
+        <button class="night-pill" id="pill-n12" onclick="selectNightGroup('nights_1_2')">Nights 1–2</button>
+        <button class="night-pill" id="pill-n34" onclick="selectNightGroup('nights_3_4')">Nights 3–4</button>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <span class="req-select-label">Requested room</span>
+      <select id="req-room-select" class="req-select" onchange="checkSwapReady()">
+        <option value="">Select a room...</option>
+      </select>
+    </div>
+    <textarea id="swap-note" placeholder="Additional notes..." style="margin-top:12px; min-height:60px" oninput="checkSwapReady()"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-submit" id="submit-swap-btn" onclick="submitSwap()" disabled>Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Conflict Panel -->
+<div id="conflict-backdrop" onclick="closeConflictPanel()"></div>
+<div id="conflict-panel">
+  <div class="cp-header">
+    <div>
+      <div class="cp-title">Room Full — Resolve Conflict</div>
+      <div class="cp-subtitle" id="cp-subtitle"></div>
+    </div>
+    <button class="cp-close" onclick="closeConflictPanel()">&#x2715;</button>
+  </div>
+  <div class="cp-body" id="cp-body"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://tjxbvcjfyiqfqqnadets.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqeGJ2Y2pmeWlxZnFxbmFkZXRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTY5MDEsImV4cCI6MjA5NTQ3MjkwMX0.-btwjLVlds9GDV7SCNpjQOhXML8vfD9MI6Ki-D5vaN0';
+
+const GIRLS = ["King Justine","Melanson Elizabeth","Sharp Stephanie"];
+let allPersonnel = [];
+let allAssignments = [];
+let allRooms = [];
+let allRequests = [];
+let currentUser = null;
+let selectedName = null;
+let selectedReqOption = null;
+let selectedNightGroup = null;
+let displacedPerson = null;
+let conflictManualNg = null;
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  return opts.noJson ? res : res.json();
+}
+
+async function loadData() {
+  [allPersonnel, allRooms, allAssignments] = await Promise.all([
+    sbFetch('personnel?order=name'),
+    sbFetch('rooms?order=room_number'),
+    sbFetch('assignments?order=id')
+  ]);
+}
+
+function initials(name) {
+  const p = name.trim().split(' ');
+  return (p[0][0] + p[p.length-1][0]).toUpperCase();
+}
+
+function getRoomLabel(roomNumber, roomType) {
+  if (roomType === 'tent') return 'Tent';
+  return 'Room ' + roomNumber;
+}
+
+function getAssignmentsForNight(nightGroup) {
+  return allAssignments.filter(a => a.night_group === nightGroup || a.night_group === 'all');
+}
+
+function getRoomById(id) {
+  return allRooms.find(r => r.id === id);
+}
+
+function getPersonAssignment(name, nightGroup) {
+  const ngs = nightGroup === 'nights_1_2' ? ['nights_1_2','all'] : ['nights_3_4','all'];
+  const a = allAssignments.find(x => x.person_name === name && ngs.includes(x.night_group));
+  if (!a) return null;
+  const room = getRoomById(a.room_id);
+  return { assignment: a, room };
+}
+
+function getRoommates(personName, roomId, nightGroup) {
+  const ngs = nightGroup === 'nights_1_2' ? ['nights_1_2','all'] : ['nights_3_4','all'];
+  return allAssignments
+    .filter(a => a.room_id === roomId && ngs.includes(a.night_group) && a.person_name !== personName)
+    .map(a => a.person_name);
+}
+
+// ---- LOGIN ----
+function filterNames(val) {
+  const res = document.getElementById('name-results');
+  selectedName = null;
+  document.getElementById('login-btn').disabled = true;
+  if (!val.trim()) { res.innerHTML = ''; return; }
+  const matches = allPersonnel.filter(p => p.name.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (!matches.length) { res.innerHTML = ''; return; }
+  res.innerHTML = matches.map(p =>
+    `<div class="name-opt" onclick="selectName('${p.name.replace(/'/g,"\\'")}')"><strong>${p.name}</strong></div>`
+  ).join('');
+}
+
+function selectName(name) {
+  selectedName = name;
+  document.getElementById('name-search').value = name;
+  document.getElementById('name-results').innerHTML = '';
+  document.getElementById('login-btn').disabled = false;
+}
+
+function doLogin() {
+  if (!selectedName) return;
+  currentUser = allPersonnel.find(p => p.name === selectedName);
+  localStorage.setItem('loring_user', selectedName);
+  showApp();
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('loring_user');
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('name-search').value = '';
+  selectedName = null;
+  document.getElementById('login-btn').disabled = true;
+}
+
+// ---- APP ----
+function showApp() {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+
+  const ini = initials(currentUser.name);
+  document.getElementById('header-avatar').textContent = ini;
+  document.getElementById('header-name').textContent = currentUser.name;
+
+  const adminTab = document.getElementById('admin-tab');
+  if (currentUser.is_admin) {
+    adminTab.style.display = '';
+    loadRequests();
+  } else {
+    adminTab.style.display = 'none';
+  }
+
+  renderMyCard();
+  renderNightsView('nights_1_2', document.getElementById('nights12'));
+  renderNightsView('nights_3_4', document.getElementById('nights34'));
+  renderLookup('');
+}
+
+function renderMyCard() {
+  const n12 = getPersonAssignment(currentUser.name, 'nights_1_2');
+  const n34 = getPersonAssignment(currentUser.name, 'nights_3_4');
+  const sec = document.getElementById('my-card-section');
+  if (!n12 && !n34) { sec.innerHTML = ''; return; }
+
+  function nightHTML(data, label) {
+    if (!data) return '';
+    const { room } = data;
+    const isTent = room.room_type === 'tent';
+    const loc = isTent ? 'Tent' : 'Room ' + room.room_number;
+    const mates = getRoommates(currentUser.name, room.id, label === 'Nights 1–2' ? 'nights_1_2' : 'nights_3_4');
+    const detail = isTent ? `${allAssignments.filter(a => a.room_id === room.id && (a.night_group === (label==='Nights 1–2'?'nights_1_2':'nights_3_4') || a.night_group==='all')).length} people` : (mates.length ? mates.map(m => m.split(' ')[0]).join(', ') : 'Solo');
+    return `<div class="night-block">
+      <div class="night-label">${label}</div>
+      <div class="night-loc">${loc}</div>
+      <div class="night-detail">${detail}</div>
+    </div>`;
+  }
+
+  sec.innerHTML = `<div class="my-card">
+    <div class="my-card-label">Your Assignment</div>
+    <div class="my-card-name">${currentUser.name}</div>
+    <div class="my-nights">
+      ${nightHTML(n12, 'Nights 1–2')}
+      ${nightHTML(n34, 'Nights 3–4')}
+    </div>
+    <button class="swap-btn" onclick="openModal()">Request a Change</button>
+  </div>`;
+}
+
+function renderNightsView(nightGroup, container) {
+  const label = nightGroup === 'nights_1_2' ? 'Nights 1 & 2' : 'Nights 3 & 4';
+  const ngs = nightGroup === 'nights_1_2' ? ['nights_1_2','all'] : ['nights_3_4','all'];
+  const assignmentsForNight = allAssignments.filter(a => ngs.includes(a.night_group));
+
+  // Group by room
+  const byRoom = {};
+  for (const a of assignmentsForNight) {
+    if (!byRoom[a.room_id]) byRoom[a.room_id] = [];
+    byRoom[a.room_id].push(a.person_name);
+  }
+
+  const hotelRooms = allRooms.filter(r => r.room_type !== 'tent').sort((a,b) => a.room_number - b.room_number);
+  const tentRoom = allRooms.find(r => r.room_type === 'tent');
+  const tentPeople = byRoom[tentRoom?.id] || [];
+
+  const swapNote = nightGroup === 'nights_1_2'
+    ? 'Swap happens morning of Day 3'
+    : `${tentPeople.length > 0 ? '' : ''}Former tent occupants now in rooms. Some personnel kept in hotel (tent at capacity).`;
+
+  let html = `<div class="swap-banner"><span style="font-size:16px">⚡</span><span class="swap-banner-text">${label} &nbsp;·&nbsp; ${swapNote}</span></div>`;
+  html += `<div class="section-label">Hotel Rooms</div><div class="rooms-grid">`;
+
+  for (const room of hotelRooms) {
+    const people = byRoom[room.id] || [];
+    if (!people.length) continue;
+    const isGirls = room.room_type === 'girls';
+    const isMine = people.includes(currentUser.name);
+    let cls = 'room-card';
+    if (isGirls) cls += ' girls';
+    if (isMine) cls += ' mine';
+
+    html += `<div class="${cls}">`;
+    html += `<div class="room-num">Room ${room.room_number}`;
+    if (isGirls) html += ` <span class="badge badge-pink">girls</span>`;
+    if (isMine && !isGirls) html += ` <span class="badge badge-blue">you</span>`;
+    html += `</div>`;
+
+    for (const p of people) {
+      const isMe = p === currentUser.name;
+      const av = GIRLS.includes(p) ? 'av-pink' : (isMe ? 'av-amber' : 'av-blue');
+      html += `<div class="person-row"><div class="avatar ${av}">${initials(p)}</div><span class="pname${isMe?' is-me':''}">${p}</span></div>`;
+    }
+    if (people.length === 1 && !isGirls) html += `<div class="solo-note">single occupancy</div>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  if (tentPeople.length) {
+    html += `<div class="section-label">Tent</div>`;
+    html += `<div class="tent-card"><div class="tent-header"><span class="tent-icon">⛺</span><span class="tent-title">16-person tent</span><span class="tent-count">${tentPeople.length} assigned</span></div><div class="tent-grid">`;
+    for (const p of tentPeople) {
+      const isMe = p === currentUser.name;
+      html += `<div class="tent-person${isMe?' is-me':''}"><div class="avatar av-teal" style="width:22px;height:22px;font-size:9px">${initials(p)}</div><span style="font-size:12px">${p}</span></div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ---- LOOKUP ----
+function buildLookupData() {
+  return allPersonnel.map(p => {
+    const n12 = getPersonAssignment(p.name, 'nights_1_2');
+    const n34 = getPersonAssignment(p.name, 'nights_3_4');
+    const loc12 = n12 ? (n12.room.room_type === 'tent' ? 'Tent' : 'Room ' + n12.room.room_number) : '—';
+    const loc34 = n34 ? (n34.room.room_type === 'tent' ? 'Tent' : 'Room ' + n34.room.room_number) : '—';
+    return { name: p.name, loc12, loc34, isGirl: GIRLS.includes(p.name) };
+  }).sort((a,b) => a.name.split(' ').slice(-1)[0].localeCompare(b.name.split(' ').slice(-1)[0]));
+}
+
+function renderLookup(val) {
+  const data = buildLookupData();
+  const filtered = val ? data.filter(d => d.name.toLowerCase().includes(val.toLowerCase())) : data;
+  const list = document.getElementById('lookup-list');
+  if (!list) return;
+  list.innerHTML = filtered.map(d => {
+    const isMe = d.name === currentUser?.name;
+    return `<div class="lookup-row">
+      <div class="avatar ${d.isGirl ? 'av-pink' : (isMe ? 'av-amber' : 'av-blue')}" style="width:28px;height:28px;font-size:10px">${initials(d.name)}</div>
+      <span class="lookup-name">${d.name}${d.isGirl ? ' <span class="badge badge-pink" style="vertical-align:2px">girls</span>' : ''}${isMe ? ' <span class="badge badge-blue" style="vertical-align:2px">you</span>' : ''}</span>
+      <span class="lookup-loc">N1–2: <b>${d.loc12}</b></span>
+      <span class="lookup-loc">N3–4: <b>${d.loc34}</b></span>
+    </div>`;
+  }).join('') || '<div class="empty-state">No results</div>';
+}
+
+window.filterLookup = function(val) { renderLookup(val); };
+
+// ---- SWAP MODAL ----
+function selectReqOption(type) {
+  selectedReqOption = type;
+  ['hotel','tent','roommate'].forEach(t =>
+    document.getElementById('opt-' + t).classList.toggle('selected', t === type)
+  );
+  document.getElementById('roommate-select-wrap').style.display = type === 'roommate' ? 'block' : 'none';
+  checkSwapReady();
+}
+
+function checkSwapReady() {
+  const ready = selectedReqOption &&
+    (selectedReqOption !== 'roommate' || document.getElementById('roommate-select').value) &&
+    selectedNightGroup &&
+    document.getElementById('req-room-select').value &&
+    document.getElementById('swap-note').value.trim();
+  document.getElementById('submit-swap-btn').disabled = !ready;
+}
+
+function selectNightGroup(ng) {
+  selectedNightGroup = ng;
+  document.getElementById('pill-n12').classList.toggle('active', ng === 'nights_1_2');
+  document.getElementById('pill-n34').classList.toggle('active', ng === 'nights_3_4');
+  checkSwapReady();
+}
+
+function populateReqRoomSelect() {
+  const gender = allPersonnel.find(p => p.name === currentUser.name)?.gender;
+  const eligibleRooms = gender === 'F'
+    ? allRooms.filter(r => r.room_number === 1 || r.room_number === 2)
+    : allRooms.filter(r => (r.room_number >= 3 && r.room_number <= 12) || r.room_type === 'tent');
+  const sel = document.getElementById('req-room-select');
+  sel.innerHTML = '<option value="">Select a room...</option>' + eligibleRooms.map(r => {
+    const isTent = r.room_type === 'tent';
+    const lbl = isTent ? 'Tent' : 'Room ' + r.room_number;
+    const cap = r.capacity || (isTent ? 16 : 2);
+    const occ = allAssignments.filter(a => a.room_id === r.id && (a.night_group === 'nights_1_2' || a.night_group === 'all')).length;
+    const full = occ >= cap;
+    return `<option value="${r.id}"${full ? ' disabled' : ''}>${lbl} (${occ}/${cap}${full ? ' — FULL' : ''})</option>`;
+  }).join('');
+}
+
+function openModal() {
+  selectedReqOption = null;
+  ['hotel','tent','roommate'].forEach(t =>
+    document.getElementById('opt-' + t).classList.remove('selected')
+  );
+  document.getElementById('roommate-select-wrap').style.display = 'none';
+  document.getElementById('submit-swap-btn').disabled = true;
+  document.getElementById('swap-note').value = '';
+  selectedNightGroup = null;
+  document.getElementById('pill-n12').classList.remove('active');
+  document.getElementById('pill-n34').classList.remove('active');
+  populateReqRoomSelect();
+
+  const sel = document.getElementById('roommate-select');
+  sel.innerHTML = '<option value="">Select a person...</option>';
+  allPersonnel
+    .filter(p => p.name !== currentUser.name)
+    .forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+
+  document.getElementById('swap-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('swap-modal').classList.remove('active');
+}
+
+async function submitSwap() {
+  if (!selectedReqOption) return;
+  if (selectedReqOption === 'roommate' && !document.getElementById('roommate-select').value) {
+    showToast('Please select a person to room with.');
+    return;
+  }
+
+  const extraNote = document.getElementById('swap-note').value.trim();
+  let noteText;
+  if (selectedReqOption === 'hotel') {
+    noteText = 'Request: Stay in hotel all nights (nights 3–4).';
+  } else if (selectedReqOption === 'tent') {
+    noteText = 'Request: Stay in tent all nights (nights 1–2).';
+  } else {
+    const who = document.getElementById('roommate-select').value;
+    noteText = `Request: Room with ${who}.`;
+  }
+  if (extraNote) noteText += ' Notes: ' + extraNote;
+
+  const btn = document.getElementById('submit-swap-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const n12 = getPersonAssignment(currentUser.name, 'nights_1_2');
+  try {
+    await sbFetch('swap_requests', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({
+        requester_name: currentUser.name,
+        current_assignment_id: n12?.assignment?.id || null,
+        request_note: noteText,
+        status: 'pending',
+        requested_night_group: selectedNightGroup,
+        requested_room_id: parseInt(document.getElementById('req-room-select').value)
+      })
+    });
+    closeModal();
+    showToast('Request submitted! The superintendent will review it.');
+    // Non-blocking admin notification
+    const n34 = getPersonAssignment(currentUser.name, 'nights_3_4');
+    const loc_n12 = n12 ? (n12.room.room_type === 'tent' ? 'Tent' : 'Room ' + n12.room.room_number) : '—';
+    const loc_n34 = n34 ? (n34.room.room_type === 'tent' ? 'Tent' : 'Room ' + n34.room.room_number) : '—';
+    fetch('https://tjxbvcjfyiqfqqnadets.supabase.co/functions/v1/notify-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ requester_name: currentUser.name, request_note: noteText, loc_n12, loc_n34 })
+    }).catch(e => console.error('notify-admin:', e));
+  } catch(e) {
+    showToast('Error submitting request. Try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Submit Request';
+}
+
+// ---- ADMIN ----
+async function loadRequests() {
+  allRequests = await sbFetch('swap_requests?order=created_at.desc');
+  renderRequests();
+}
+
+async function loadAllData() {
+  [allPersonnel, allRooms, allAssignments, allRequests] = await Promise.all([
+    sbFetch('personnel?order=name'),
+    sbFetch('rooms?order=room_number'),
+    sbFetch('assignments?order=id'),
+    sbFetch('swap_requests?order=created_at.desc')
+  ]);
+}
+
+function rerenderActiveAdminPill() {
+  const active = document.querySelector('.admin-sub-tab.active')?.id?.replace('atab-', '');
+  if (active === 'requests') renderRequests();
+  else if (active === 'rooms') renderRoomsAdmin();
+  else if (active === 'people') renderPeopleAdmin();
+}
+
+function renderRequests() {
+  const container = document.getElementById('requests-list');
+  if (!container) return;
+  const pending = allRequests.filter(r => r.status === 'pending');
+  const resolved = allRequests.filter(r => r.status !== 'pending');
+
+  let html = `<div class="section-label">Pending Requests (${pending.length})</div>`;
+  if (!pending.length) html += `<div class="empty-state">No pending requests</div>`;
+  for (const r of pending) {
+    html += requestCardHTML(r);
+  }
+  if (resolved.length) {
+    html += `<div class="section-label" style="margin-top:24px">Resolved (${resolved.length})</div>`;
+    for (const r of resolved) html += requestCardHTML(r);
+  }
+  container.innerHTML = html;
+}
+
+function requestCardHTML(r) {
+  const d = new Date(r.created_at);
+  const timeStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  const statusCls = r.status === 'pending' ? 'status-pending' : r.status === 'approved' ? 'status-approved' : r.status === 'ignored' ? 'status-ignored' : 'status-denied';
+  const roomOpts = '<option value="">No room change</option>' + allRooms.map(rm => {
+    const lbl = rm.room_type === 'tent' ? 'Tent' : 'Room ' + rm.room_number;
+    return `<option value="${rm.id}">${lbl}</option>`;
+  }).join('');
+  const safeNote = (r.request_note || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<div class="request-card" id="rc-${r.id}">
+    <div class="req-meta">
+      <div class="avatar av-blue" style="width:28px;height:28px;font-size:10px">${initials(r.requester_name)}</div>
+      <span class="req-name">${r.requester_name}</span>
+      <span class="status-badge ${statusCls}">${r.status}</span>
+      <span class="req-time">${timeStr}</span>
+    </div>
+    <div class="req-note" id="rn-${r.id}">${r.request_note || '—'}</div>
+    <div class="req-modify-area" id="rma-${r.id}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span class="req-modify-label" style="margin:0">Edit request</span>
+        <button onclick="toggleModifyReq(${r.id})" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+      </div>
+      <textarea class="req-modify-textarea" id="rmt-${r.id}">${safeNote}</textarea>
+      <div class="req-modify-label">Assign to room (optional)</div>
+      <select class="req-modify-select" id="rmr-${r.id}">${roomOpts}</select>
+      <button class="btn-save-req" onclick="saveModifiedRequest(${r.id})">Save Changes &amp; Approve</button>
+    </div>
+    ${r.status === 'pending' ? `<div class="req-actions">
+      <button class="btn-approve" onclick="approveRequest(${r.id})">Approve</button>
+      <button class="btn-deny" onclick="denyRequest(${r.id})">Deny</button>
+      <button class="btn-ignore" onclick="resolveRequest(${r.id},'ignored')">Ignore</button>
+      <button class="btn-modify" onclick="toggleModifyReq(${r.id})">Modify</button>
+    </div>` : `<div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      Reviewed by ${r.reviewed_by || 'admin'}
+      &nbsp;<button class="btn-modify" style="font-size:12px;padding:4px 10px" onclick="toggleModifyReq(${r.id})">Edit</button>
+      <button class="btn-deny" style="font-size:12px;padding:4px 10px" onclick="deleteRequest(${r.id})">Delete</button>
+    </div>`}
+  </div>`;
+}
+
+// ignore still uses this path
+window.resolveRequest = async function(id, status) {
+  await sbFetch(`swap_requests?id=eq.${id}`, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    noJson: true,
+    body: JSON.stringify({ status, reviewed_by: currentUser.name, reviewed_at: new Date().toISOString() })
+  });
+  await loadAllData();
+  rerenderActiveAdminPill();
+  showToast(`Request ${status}.`);
+};
+
+// ---- APPROVE PATH ----
+window.approveRequest = async function(requestId) {
+  const [req] = await sbFetch(`swap_requests?id=eq.${requestId}`);
+  if (!req) { showToast('Request not found.'); return; }
+  if (!req.requested_room_id) {
+    showLegacyApprovePanel(req);
+    return;
+  }
+  await executeApprove(req.requester_name, req.requested_room_id, req.requested_night_group, requestId);
+};
+
+function showLegacyApprovePanel(req) {
+  const existing = document.getElementById(`legacy-panel-${req.id}`);
+  if (existing) { existing.remove(); return; }
+  const card = document.getElementById(`rc-${req.id}`);
+  if (!card) return;
+  const panel = document.createElement('div');
+  panel.id = `legacy-panel-${req.id}`;
+  panel.className = 'legacy-approve-panel';
+  panel.dataset.requesterName = req.requester_name;
+  panel.innerHTML = `
+    <div class="legacy-approve-msg">This request has no destination. Select a room and night group below to continue approving.</div>
+    <div style="margin-top:10px">
+      <span class="req-select-label">Requested room</span>
+      <select class="req-select" id="legacy-room-${req.id}" onchange="checkLegacyReady(${req.id})">
+        <option value="">Select a room...</option>
+        ${buildGenderRoomOpts(req.requester_name)}
+      </select>
+    </div>
+    <div style="margin-top:10px">
+      <span class="req-select-label">Which nights?</span>
+      <div class="night-pills">
+        <button class="night-pill" id="legacy-n12-${req.id}" onclick="selectLegacyNight(${req.id},'nights_1_2')">Nights 1–2</button>
+        <button class="night-pill" id="legacy-n34-${req.id}" onclick="selectLegacyNight(${req.id},'nights_3_4')">Nights 3–4</button>
+      </div>
+    </div>
+    <button class="btn-approve" id="legacy-continue-${req.id}" style="margin-top:12px;display:none" onclick="continueApprove(${req.id})">Continue Approve</button>
+  `;
+  card.insertAdjacentElement('afterend', panel);
+}
+
+function buildGenderRoomOpts(requesterName) {
+  const gender = allPersonnel.find(p => p.name === requesterName)?.gender;
+  const eligible = gender === 'F'
+    ? allRooms.filter(r => r.room_number === 1 || r.room_number === 2)
+    : allRooms.filter(r => (r.room_number >= 3 && r.room_number <= 12) || r.room_type === 'tent');
+  return eligible.map(r => {
+    const isTent = r.room_type === 'tent';
+    const lbl = isTent ? 'Tent' : 'Room ' + r.room_number;
+    const cap = r.capacity || (isTent ? 16 : 2);
+    const occ = allAssignments.filter(a => a.room_id === r.id && (a.night_group === 'nights_1_2' || a.night_group === 'all')).length;
+    const full = occ >= cap;
+    return `<option value="${r.id}"${full ? ' disabled' : ''}>${lbl} (${occ}/${cap}${full ? ' — FULL' : ''})</option>`;
+  }).join('');
+}
+
+window.selectLegacyNight = function(id, ng) {
+  document.getElementById(`legacy-n12-${id}`).classList.toggle('active', ng === 'nights_1_2');
+  document.getElementById(`legacy-n34-${id}`).classList.toggle('active', ng === 'nights_3_4');
+  document.getElementById(`legacy-panel-${id}`).dataset.nightGroup = ng;
+  checkLegacyReady(id);
+};
+
+window.checkLegacyReady = function(id) {
+  const panel = document.getElementById(`legacy-panel-${id}`);
+  const roomVal = document.getElementById(`legacy-room-${id}`)?.value;
+  const ng = panel?.dataset.nightGroup;
+  const btn = document.getElementById(`legacy-continue-${id}`);
+  if (btn) btn.style.display = (roomVal && ng) ? '' : 'none';
+};
+
+window.continueApprove = async function(id) {
+  const panel = document.getElementById(`legacy-panel-${id}`);
+  const roomId = parseInt(document.getElementById(`legacy-room-${id}`).value);
+  const ng = panel.dataset.nightGroup;
+  const requesterName = panel.dataset.requesterName;
+  panel.remove();
+  await executeApprove(requesterName, roomId, ng, id);
+};
+
+async function executeApprove(requesterName, requestedRoomId, requestedNightGroup, requestId) {
+  const room = allRooms.find(r => r.id === requestedRoomId);
+  if (!room) { showToast('Room not found.'); return; }
+
+  const cap = room.capacity || (room.room_type === 'tent' ? 16 : 2);
+  const ngs = requestedNightGroup === 'nights_1_2' ? ['nights_1_2', 'all'] : ['nights_3_4', 'all'];
+  const occ = allAssignments.filter(a => a.room_id === requestedRoomId && ngs.includes(a.night_group)).length;
+
+  if (occ >= cap) {
+    window.conflictPending = { requestId, requesterName, requestedRoomId, requestedNightGroup };
+    openConflictPanel();
+    return;
+  }
+
+  const currentA = allAssignments.find(a => a.person_name === requesterName && ngs.includes(a.night_group));
+  if (currentA) {
+    const currentRoom = allRooms.find(r => r.id === currentA.room_id);
+    if (currentRoom && (currentRoom.room_number === 1 || currentRoom.room_number === 2)) {
+      showToast('Girls rooms cannot be modified');
+      return;
+    }
+  }
+
+  try {
+    if (currentA) {
+      await sbFetch(`assignments?id=eq.${currentA.id}`, {
+        method: 'DELETE',
+        prefer: 'return=minimal',
+        noJson: true
+      });
+    }
+    await sbFetch('assignments', {
+      method: 'POST',
+      body: JSON.stringify({ person_name: requesterName, room_id: requestedRoomId, night_group: requestedNightGroup })
+    });
+    await sbFetch(`swap_requests?id=eq.${requestId}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ status: 'approved', reviewed_by: 'Admin', reviewed_at: new Date().toISOString() })
+    });
+    await loadAllData();
+    rerenderActiveAdminPill();
+    const roomLabel = room.room_type === 'tent' ? 'Tent' : 'Room ' + room.room_number;
+    showToast(`${requesterName} moved to ${roomLabel}`);
+    fetch('https://tjxbvcjfyiqfqqnadets.supabase.co/functions/v1/notify-requester', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ requester_name: requesterName, status: 'approved' })
+    }).catch(e => console.error('notify-requester:', e));
+  } catch(e) {
+    showToast('Error approving request. Try again.');
+  }
+}
+
+function openConflictPanel() {
+  const { requesterName, requestedRoomId, requestedNightGroup } = window.conflictPending;
+  displacedPerson = null;
+  conflictManualNg = null;
+
+  if (!requestedRoomId || !requestedNightGroup) {
+    // Manual selection mode — destination not yet chosen
+    renderConflictManualSelect();
+  } else {
+    const room = allRooms.find(r => r.id === requestedRoomId);
+    const roomLabel = room ? (room.room_type === 'tent' ? 'Tent' : 'Room ' + room.room_number) : '—';
+    const ngLabel = requestedNightGroup === 'nights_1_2' ? 'Nights 1–2' : 'Nights 3–4';
+    const ngs = requestedNightGroup === 'nights_1_2' ? ['nights_1_2', 'all'] : ['nights_3_4', 'all'];
+    const cap = room ? (room.capacity || (room.room_type === 'tent' ? 16 : 2)) : 0;
+    const occ = allAssignments.filter(a => a.room_id === requestedRoomId && ngs.includes(a.night_group)).length;
+    document.getElementById('cp-subtitle').textContent =
+      `${requesterName} wants ${roomLabel} for ${ngLabel} but it is at capacity (${occ}/${cap})`;
+    renderConflictBody();
+  }
+
+  document.getElementById('conflict-backdrop').classList.add('open');
+  document.getElementById('conflict-panel').classList.add('open');
+}
+
+function closeConflictPanel() {
+  document.getElementById('conflict-backdrop').classList.remove('open');
+  document.getElementById('conflict-panel').classList.remove('open');
+  document.getElementById('cp-body').innerHTML = '';
+  document.getElementById('cp-subtitle').textContent = '';
+  window.conflictPending = null;
+  displacedPerson = null;
+  conflictManualNg = null;
+}
+
+function renderConflictManualSelect() {
+  const { requesterName } = window.conflictPending;
+  document.getElementById('cp-subtitle').textContent = `Choose a destination for ${requesterName} to continue.`;
+  const gender = allPersonnel.find(p => p.name === requesterName)?.gender;
+  const eligible = gender === 'F'
+    ? allRooms.filter(r => r.room_number === 1 || r.room_number === 2)
+    : allRooms.filter(r => (r.room_number >= 3 && r.room_number <= 12) || r.room_type === 'tent');
+  const roomOpts = eligible.map(r => {
+    const isTent = r.room_type === 'tent';
+    const lbl = isTent ? 'Tent' : 'Room ' + r.room_number;
+    const cap = r.capacity || (isTent ? 16 : 2);
+    const occ = allAssignments.filter(a => a.room_id === r.id && (a.night_group === 'nights_1_2' || a.night_group === 'all')).length;
+    const full = occ >= cap;
+    return `<option value="${r.id}"${full ? ' disabled' : ''}>${lbl} (${occ}/${cap}${full ? ' — FULL' : ''})</option>`;
+  }).join('');
+  document.getElementById('cp-body').innerHTML = `
+    <div class="section-label" style="margin-bottom:10px">Destination</div>
+    <select class="req-select" id="cp-manual-room" onchange="checkConflictManualReady()">
+      <option value="">Select a room...</option>
+      ${roomOpts}
+    </select>
+    <div style="margin-top:12px">
+      <span class="req-select-label">Which nights?</span>
+      <div class="night-pills">
+        <button class="night-pill" id="cp-pill-n12" onclick="selectConflictNight('nights_1_2')">Nights 1–2</button>
+        <button class="night-pill" id="cp-pill-n34" onclick="selectConflictNight('nights_3_4')">Nights 3–4</button>
+      </div>
+    </div>
+    <button class="btn-approve" id="cp-manual-continue" style="margin-top:14px;width:100%;padding:10px;display:none" onclick="continueConflictManual()">Continue</button>
+  `;
+}
+
+window.selectConflictNight = function(ng) {
+  conflictManualNg = ng;
+  document.getElementById('cp-pill-n12').classList.toggle('active', ng === 'nights_1_2');
+  document.getElementById('cp-pill-n34').classList.toggle('active', ng === 'nights_3_4');
+  checkConflictManualReady();
+};
+
+window.checkConflictManualReady = function() {
+  const roomVal = document.getElementById('cp-manual-room')?.value;
+  const btn = document.getElementById('cp-manual-continue');
+  if (btn) btn.style.display = (roomVal && conflictManualNg) ? '' : 'none';
+};
+
+window.continueConflictManual = function() {
+  const roomId = parseInt(document.getElementById('cp-manual-room').value);
+  window.conflictPending.requestedRoomId = roomId;
+  window.conflictPending.requestedNightGroup = conflictManualNg;
+  const room = allRooms.find(r => r.id === roomId);
+  const roomLabel = room ? (room.room_type === 'tent' ? 'Tent' : 'Room ' + room.room_number) : '—';
+  const ngLabel = conflictManualNg === 'nights_1_2' ? 'Nights 1–2' : 'Nights 3–4';
+  const ngs = conflictManualNg === 'nights_1_2' ? ['nights_1_2', 'all'] : ['nights_3_4', 'all'];
+  const cap = room ? (room.capacity || (room.room_type === 'tent' ? 16 : 2)) : 0;
+  const occ = allAssignments.filter(a => a.room_id === roomId && ngs.includes(a.night_group)).length;
+  document.getElementById('cp-subtitle').textContent =
+    `${window.conflictPending.requesterName} wants ${roomLabel} for ${ngLabel} but it is at capacity (${occ}/${cap})`;
+  displacedPerson = null;
+  renderConflictBody();
+};
+
+function renderConflictBody() {
+  const { requesterName, requestedRoomId, requestedNightGroup } = window.conflictPending;
+  const room = allRooms.find(r => r.id === requestedRoomId);
+  const roomLabel = room ? (room.room_type === 'tent' ? 'Tent' : 'Room ' + room.room_number) : '—';
+  const ngLabel = requestedNightGroup === 'nights_1_2' ? 'Nights 1–2' : 'Nights 3–4';
+  const ngs = requestedNightGroup === 'nights_1_2' ? ['nights_1_2', 'all'] : ['nights_3_4', 'all'];
+  const otherNg = requestedNightGroup === 'nights_1_2' ? 'nights_3_4' : 'nights_1_2';
+  const otherNgLabel = otherNg === 'nights_1_2' ? 'N1–2' : 'N3–4';
+
+  const occupants = allAssignments.filter(a => a.room_id === requestedRoomId && ngs.includes(a.night_group));
+
+  let html = `<div class="section-label" style="margin-bottom:10px">Current occupants of ${roomLabel} — ${ngLabel}</div>`;
+  for (const occ of occupants) {
+    const isSelected = occ.person_name === displacedPerson;
+    const other = getPersonAssignment(occ.person_name, otherNg);
+    const otherLoc = other ? (other.room.room_type === 'tent' ? 'Tent' : 'Room ' + other.room.room_number) : '—';
+    html += `<div class="cp-occ-row${isSelected ? ' cp-selected' : ''}">
+      <div class="avatar av-blue" style="width:28px;height:28px;font-size:10px">${initials(occ.person_name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${occ.person_name}</div>
+        <div style="font-size:11px;color:var(--muted)">${otherNgLabel}: ${otherLoc}</div>
+      </div>
+      <button class="btn-swap-out" onclick="selectDisplacedPerson('${occ.person_name.replace(/'/g, "\\'")}')">Swap out</button>
+    </div>`;
+  }
+
+  if (displacedPerson) {
+    const gender = allPersonnel.find(p => p.name === displacedPerson)?.gender;
+    const eligible = gender === 'F'
+      ? allRooms.filter(r => r.room_type === 'hotel' && r.room_number !== 1 && r.room_number !== 2)
+      : allRooms.filter(r => (r.room_number >= 3 && r.room_number <= 12) || r.room_type === 'tent');
+    const eligibleFiltered = eligible.filter(r => r.id !== requestedRoomId);
+
+    const opts = eligibleFiltered.map(r => {
+      const isTent = r.room_type === 'tent';
+      const lbl = isTent ? 'Tent' : 'Room ' + r.room_number;
+      const cap = r.capacity || (isTent ? 16 : 2);
+      const occ = allAssignments.filter(a => a.room_id === r.id && ngs.includes(a.night_group)).length;
+      const full = occ >= cap;
+      return `<option value="${r.id}"${full ? ' disabled' : ''}>${lbl} (${occ}/${cap}${full ? ' — FULL' : ''})</option>`;
+    }).join('');
+
+    html += `<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="section-label" style="margin-bottom:10px">Move ${displacedPerson} to:</div>
+      <select class="req-select" id="cp-replacement-room" onchange="document.getElementById('cp-approve-btn').disabled=!this.value">
+        <option value="">Select a room...</option>
+        ${opts}
+      </select>
+      <button class="btn-approve" id="cp-approve-btn" style="margin-top:12px;width:100%;padding:10px;font-size:14px" disabled onclick="swapApprove()">Approve and Swap</button>
+    </div>`;
+  }
+
+  document.getElementById('cp-body').innerHTML = html;
+}
+
+window.selectDisplacedPerson = function(name) {
+  displacedPerson = name;
+  renderConflictBody();
+};
+
+async function swapApprove() {
+  const { requesterName, requestedRoomId, requestedNightGroup, requestId } = window.conflictPending;
+  const replacementRoomId = parseInt(document.getElementById('cp-replacement-room').value);
+  if (!replacementRoomId || !displacedPerson) return;
+
+  const btn = document.getElementById('cp-approve-btn');
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+
+  const room = allRooms.find(r => r.id === requestedRoomId);
+  const replacementRoom = allRooms.find(r => r.id === replacementRoomId);
+  const roomLabel = room ? (room.room_type === 'tent' ? 'Tent' : 'Room ' + room.room_number) : '—';
+  const replacementLabel = replacementRoom ? (replacementRoom.room_type === 'tent' ? 'Tent' : 'Room ' + replacementRoom.room_number) : '—';
+
+  const ngs = requestedNightGroup === 'nights_1_2' ? ['nights_1_2', 'all'] : ['nights_3_4', 'all'];
+  const displacedA = allAssignments.find(a => a.person_name === displacedPerson && ngs.includes(a.night_group) && a.room_id === requestedRoomId);
+  const requesterA = allAssignments.find(a => a.person_name === requesterName && ngs.includes(a.night_group));
+
+  let insertedDisplacedId = null;
+  let insertedRequesterId = null;
+  const done = [];
+
+  try {
+    // Step 1 — DELETE displaced from requested room
+    await sbFetch(`assignments?id=eq.${displacedA.id}`, { method: 'DELETE', prefer: 'return=minimal', noJson: true });
+    done.push(1);
+
+    // Step 2 — INSERT displaced into replacement room
+    const [newDA] = await sbFetch('assignments', {
+      method: 'POST',
+      body: JSON.stringify({ person_name: displacedPerson, room_id: replacementRoomId, night_group: requestedNightGroup })
+    });
+    insertedDisplacedId = newDA.id;
+    done.push(2);
+
+    // Step 3 — DELETE requester's current assignment (if any)
+    if (requesterA) {
+      await sbFetch(`assignments?id=eq.${requesterA.id}`, { method: 'DELETE', prefer: 'return=minimal', noJson: true });
+    }
+    done.push(3);
+
+    // Step 4 — INSERT requester into requested room
+    const [newRA] = await sbFetch('assignments', {
+      method: 'POST',
+      body: JSON.stringify({ person_name: requesterName, room_id: requestedRoomId, night_group: requestedNightGroup })
+    });
+    insertedRequesterId = newRA.id;
+    done.push(4);
+
+    // Step 5 — PATCH swap_requests to approved
+    await sbFetch(`swap_requests?id=eq.${requestId}`, {
+      method: 'PATCH', prefer: 'return=minimal', noJson: true,
+      body: JSON.stringify({ status: 'approved', reviewed_by: 'Admin', reviewed_at: new Date().toISOString() })
+    });
+    done.push(5);
+
+    // All five succeeded
+    await loadAllData();
+    closeConflictPanel();
+    renderRequests();
+    renderRoomsAdmin();
+    showToast(`Swap complete — ${requesterName} moved to ${roomLabel}, ${displacedPerson} moved to ${replacementLabel}`);
+    fetch('https://tjxbvcjfyiqfqqnadets.supabase.co/functions/v1/notify-requester', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ requester_name: requesterName, status: 'approved' })
+    }).catch(e => console.error('notify-requester:', e));
+
+  } catch(e) {
+    // Rollback completed steps in reverse
+    try {
+      if (done.includes(5)) {
+        await sbFetch(`swap_requests?id=eq.${requestId}`, {
+          method: 'PATCH', prefer: 'return=minimal', noJson: true,
+          body: JSON.stringify({ status: 'pending', reviewed_by: null, reviewed_at: null })
+        });
+      }
+      if (done.includes(4) && insertedRequesterId) {
+        await sbFetch(`assignments?id=eq.${insertedRequesterId}`, { method: 'DELETE', prefer: 'return=minimal', noJson: true });
+      }
+      if (done.includes(3) && requesterA) {
+        await sbFetch('assignments', {
+          method: 'POST', prefer: 'return=minimal', noJson: true,
+          body: JSON.stringify({ person_name: requesterA.person_name, room_id: requesterA.room_id, night_group: requesterA.night_group })
+        });
+      }
+      if (done.includes(2) && insertedDisplacedId) {
+        await sbFetch(`assignments?id=eq.${insertedDisplacedId}`, { method: 'DELETE', prefer: 'return=minimal', noJson: true });
+      }
+      if (done.includes(1)) {
+        await sbFetch('assignments', {
+          method: 'POST', prefer: 'return=minimal', noJson: true,
+          body: JSON.stringify({ person_name: displacedPerson, room_id: requestedRoomId, night_group: displacedA.night_group })
+        });
+      }
+    } catch(rollbackErr) {
+      console.error('Rollback failed:', rollbackErr);
+    }
+    showToast(`Error: ${e.message}`);
+    if (btn) { btn.disabled = false; btn.textContent = 'Approve and Swap'; }
+  }
+}
+
+// ---- DENY PATH ----
+window.denyRequest = async function(id) {
+  const req = allRequests.find(r => r.id === id);
+  try {
+    await sbFetch(`swap_requests?id=eq.${id}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ status: 'denied', reviewed_by: 'Admin', reviewed_at: new Date().toISOString() })
+    });
+    await loadAllData();
+    rerenderActiveAdminPill();
+    showToast(`Request from ${req?.requester_name || 'member'} denied`);
+    if (req) {
+      fetch('https://tjxbvcjfyiqfqqnadets.supabase.co/functions/v1/notify-requester', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ requester_name: req.requester_name, status: 'denied' })
+      }).catch(e => console.error('notify-requester:', e));
+    }
+  } catch(e) {
+    showToast('Error denying request. Try again.');
+  }
+};
+
+window.deleteRequest = async function(id) {
+  if (!confirm('Delete this request permanently?')) return;
+  try {
+    await sbFetch(`swap_requests?id=eq.${id}`, {
+      method: 'DELETE',
+      prefer: 'return=minimal',
+      noJson: true
+    });
+    await loadAllData();
+    rerenderActiveAdminPill();
+    showToast('Request deleted.');
+  } catch(e) {
+    showToast('Error deleting. Try again.');
+  }
+};
+
+// ---- ADMIN LOGIN ----
+function toggleAdminSection() {
+  document.getElementById('admin-collapse').classList.toggle('open');
+}
+
+function doAdminLogin() {
+  const user = document.getElementById('admin-username').value.trim();
+  const pass = document.getElementById('admin-password').value;
+  const errEl = document.getElementById('admin-login-error');
+  if (user === 'loring-admin' && pass === 'loring2026') {
+    const admin = allPersonnel.find(p => p.name === 'Getchius Peter');
+    if (!admin) { errEl.textContent = 'Admin account not found in database.'; errEl.style.display = 'block'; return; }
+    currentUser = admin;
+    localStorage.setItem('loring_user', admin.name);
+    showApp();
+  } else {
+    errEl.textContent = 'Incorrect username or password.';
+    errEl.style.display = 'block';
+    setTimeout(() => errEl.style.display = 'none', 3000);
+  }
+}
+
+// ---- ADMIN TAB ----
+function showAdminTab(tab) {
+  ['requests','rooms','people'].forEach(t => {
+    document.getElementById('admin-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('atab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'rooms') renderRoomsAdmin();
+  if (tab === 'people') renderPeopleAdmin();
+}
+
+window.toggleModifyReq = function(id) {
+  document.getElementById('rma-' + id).classList.toggle('open');
+};
+
+window.saveModifiedRequest = async function(id) {
+  const note = document.getElementById('rmt-' + id).value.trim();
+  const roomId = document.getElementById('rmr-' + id).value;
+  const req = allRequests.find(x => x.id === id); // capture before mutations
+  try {
+    await sbFetch(`swap_requests?id=eq.${id}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ request_note: note, status: 'approved', reviewed_by: currentUser.name, reviewed_at: new Date().toISOString() })
+    });
+    if (roomId && req) {
+      const a = allAssignments.find(x => x.person_name === req.requester_name && ['nights_1_2','all'].includes(x.night_group));
+      if (a) {
+        await sbFetch(`assignments?id=eq.${a.id}`, {
+          method: 'PATCH',
+          prefer: 'return=minimal',
+          noJson: true,
+          body: JSON.stringify({ room_id: parseInt(roomId) })
+        });
+      }
+    }
+    await loadAllData();
+    rerenderActiveAdminPill();
+    showToast('Request updated and approved.');
+    if (req) {
+      fetch('https://tjxbvcjfyiqfqqnadets.supabase.co/functions/v1/notify-requester', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ requester_name: req.requester_name, status: 'approved', admin_note: note })
+      }).catch(e => console.error('notify-requester:', e));
+    }
+  } catch(e) {
+    showToast('Error saving. Try again.');
+  }
+};
+
+// ---- ROOMS ADMIN ----
+function renderRoomsAdmin() {
+  const container = document.getElementById('admin-rooms');
+  container.innerHTML = '<div class="section-label">All Rooms — Edit Occupants</div><div class="room-mgmt-grid" id="room-mgmt-grid"></div>';
+  const grid = document.getElementById('room-mgmt-grid');
+
+  for (const room of allRooms) {
+    const isGirls = room.room_type === 'girls';
+    const isTent = room.room_type === 'tent';
+    const title = isTent ? 'Tent' : 'Room ' + room.room_number;
+
+    const card = document.createElement('div');
+    card.className = 'room-mgmt-card' + (isGirls ? ' girls-card' : '');
+
+    let html = `<div class="room-mgmt-title">${isTent ? '⛺' : '🛏'} ${title}${isGirls ? ' <span class="badge badge-pink">girls</span>' : ''}</div>`;
+
+    if (isGirls) {
+      const occ = allAssignments.filter(a => a.room_id === room.id);
+      html += occ.map(a => `<div class="occ-row">
+        <div class="avatar av-pink" style="width:20px;height:20px;font-size:8px">${initials(a.person_name)}</div>
+        <span class="occ-name">${a.person_name}</span>
+      </div>`).join('');
+      html += `<div class="girls-lock">🔒 Locked — display only</div>`;
+      card.innerHTML = html;
+    } else {
+      for (const ng of ['nights_1_2', 'nights_3_4']) {
+        const ngLabel = ng === 'nights_1_2' ? 'Nights 1–2' : 'Nights 3–4';
+        const occupants = allAssignments.filter(a => a.room_id === room.id && a.night_group === ng);
+        html += `<div class="room-night-label">${ngLabel}</div>`;
+        html += occupants.length
+          ? occupants.map(a => `<div class="occ-row" id="occ-${a.id}">
+              <div class="avatar av-blue" style="width:20px;height:20px;font-size:8px">${initials(a.person_name)}</div>
+              <span class="occ-name">${a.person_name}</span>
+              <button class="btn-rm-occ" data-aid="${a.id}" title="Remove">×</button>
+            </div>`).join('')
+          : `<div style="font-size:11px;color:var(--muted);padding:2px 0">Empty</div>`;
+
+        const cap = room.capacity || (room.room_type === 'tent' ? 16 : 2);
+        const occ = allAssignments.filter(a => a.room_id === room.id && a.night_group === ng).length;
+        if (occ >= cap) {
+          html += `<div style="font-size:11px;color:var(--amber);margin-top:5px">Full (${occ}/${cap})</div>`;
+        } else {
+          const unassigned = allPersonnel.filter(p =>
+            !GIRLS.includes(p.name) &&
+            !allAssignments.some(a => a.room_id === room.id && a.night_group === ng && a.person_name === p.name)
+          );
+          if (unassigned.length) {
+            html += `<div class="room-add-wrap">
+              <select class="room-add-select" id="add-${room.id}-${ng}">
+                <option value="">Add person…</option>
+                ${unassigned.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
+              </select>
+              <button class="btn-add-occ" data-room="${room.id}" data-ng="${ng}">Add</button>
+            </div>`;
+          }
+        }
+      }
+      card.innerHTML = html;
+
+      card.querySelectorAll('.btn-rm-occ').forEach(btn => {
+        btn.addEventListener('click', () => removeOccupant(parseInt(btn.dataset.aid)));
+      });
+      card.querySelectorAll('.btn-add-occ').forEach(btn => {
+        btn.addEventListener('click', () => addOccupant(parseInt(btn.dataset.room), btn.dataset.ng));
+      });
+    }
+
+    grid.appendChild(card);
+  }
+}
+
+async function removeOccupant(assignmentId) {
+  try {
+    await sbFetch(`assignments?id=eq.${assignmentId}`, {
+      method: 'DELETE',
+      prefer: 'return=minimal',
+      noJson: true
+    });
+    await loadAllData();
+    rerenderActiveAdminPill();
+    showToast('Person removed.');
+  } catch(e) { showToast('Error removing. Try again.'); }
+}
+
+async function addOccupant(roomId, nightGroup) {
+  const sel = document.getElementById(`add-${roomId}-${nightGroup}`);
+  const name = sel?.value;
+  if (!name) return;
+  try {
+    const existing = allAssignments.find(a => a.person_name === name && a.night_group === nightGroup);
+    if (existing) {
+      await sbFetch(`assignments?id=eq.${existing.id}`, {
+        method: 'DELETE',
+        prefer: 'return=minimal',
+        noJson: true
+      });
+    }
+    await sbFetch('assignments', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ person_name: name, room_id: roomId, night_group: nightGroup })
+    });
+    await loadAllData();
+    rerenderActiveAdminPill();
+    showToast(`${name.split(' ')[0]} added.`);
+  } catch(e) { showToast('Error adding. Try again.'); }
+}
+
+// ---- PEOPLE ADMIN ----
+function buildRoomOptions(nightGroup, selectedId) {
+  return allRooms
+    .filter(r => r.room_type !== 'girls')
+    .map(r => {
+      const lbl = r.room_type === 'tent' ? 'Tent' : 'Room ' + r.room_number;
+      const cap = r.capacity || (r.room_type === 'tent' ? 16 : 2);
+      const occ = allAssignments.filter(a => a.room_id === r.id && a.night_group === nightGroup).length;
+      const full = occ >= cap;
+      const sel = selectedId && r.id === selectedId ? ' selected' : '';
+      const label = full ? `${lbl} — Full (${occ}/${cap})` : `${lbl} — ${occ}/${cap} people`;
+      return `<option value="${r.id}"${sel}${full ? ' disabled' : ''}>${label}</option>`;
+    }).join('');
+}
+
+async function addNewMember() {
+  const nameEl = document.getElementById('new-member-name');
+  const n12El = document.getElementById('new-member-n12');
+  const n34El = document.getElementById('new-member-n34');
+  const errEl = document.getElementById('add-member-error');
+
+  const name = nameEl.value.trim();
+  const n12Room = parseInt(n12El.value);
+  const n34Room = parseInt(n34El.value);
+
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent = 'Name is required.'; errEl.style.display = 'block'; return; }
+  if (allPersonnel.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+    errEl.textContent = 'A member with that name already exists.'; errEl.style.display = 'block'; return;
+  }
+  if (!n12Room || !n34Room) { errEl.textContent = 'Select a room for both night groups.'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('add-member-submit');
+  btn.textContent = 'Adding…';
+  btn.disabled = true;
+
+  try {
+    await sbFetch('personnel', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ name, is_admin: false })
+    });
+    await sbFetch('assignments', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ person_name: name, room_id: n12Room, night_group: 'nights_1_2' })
+    });
+    await sbFetch('assignments', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      noJson: true,
+      body: JSON.stringify({ person_name: name, room_id: n34Room, night_group: 'nights_3_4' })
+    });
+
+    nameEl.value = '';
+    n12El.value = '';
+    n34El.value = '';
+    document.getElementById('add-member-form').classList.remove('open');
+
+    await loadAllData();
+    rerenderActiveAdminPill();
+    showToast(`${name.split(' ')[0]} added to the trip.`);
+  } catch(e) {
+    errEl.textContent = 'Error adding member. Try again.';
+    errEl.style.display = 'block';
+  }
+  btn.textContent = 'Add Member';
+  btn.disabled = false;
+}
+
+function renderPeopleAdmin() {
+  const container = document.getElementById('admin-people');
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-label" style="margin:0">All Personnel</div>
+      <button class="add-member-btn" id="add-member-toggle">+ Add Member</button>
+    </div>
+    <div class="add-member-form" id="add-member-form">
+      <div class="add-form-field" style="margin-bottom:10px">
+        <span class="add-form-label">Full Name</span>
+        <input type="text" class="add-form-input" id="new-member-name" placeholder="Last First">
+      </div>
+      <div class="add-form-row">
+        <div class="add-form-field">
+          <span class="add-form-label">Nights 1–2 Room</span>
+          <select class="add-form-input" id="new-member-n12">
+            <option value="">Select room…</option>
+            ${buildRoomOptions('nights_1_2')}
+          </select>
+        </div>
+        <div class="add-form-field">
+          <span class="add-form-label">Nights 3–4 Room</span>
+          <select class="add-form-input" id="new-member-n34">
+            <option value="">Select room…</option>
+            ${buildRoomOptions('nights_3_4')}
+          </select>
+        </div>
+      </div>
+      <div id="add-member-error" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none"></div>
+      <button class="btn-save-person" id="add-member-submit" onclick="addNewMember()">Add Member</button>
+    </div>`
+  ;
+  document.getElementById('add-member-toggle').addEventListener('click', () => {
+    document.getElementById('add-member-form').classList.toggle('open');
+  });
+
+  const sorted = [...allPersonnel].sort((a, b) =>
+    a.name.trim().split(' ')[0].localeCompare(b.name.trim().split(' ')[0])
+  );
+
+  for (const person of sorted) {
+    const isGirl = GIRLS.includes(person.name);
+    const n12 = getPersonAssignment(person.name, 'nights_1_2');
+    const n34 = getPersonAssignment(person.name, 'nights_3_4');
+    const loc12 = n12 ? (n12.room.room_type === 'tent' ? 'Tent' : 'Room ' + n12.room.room_number) : '—';
+    const loc34 = n34 ? (n34.room.room_type === 'tent' ? 'Tent' : 'Room ' + n34.room.room_number) : '—';
+
+    const row = document.createElement('div');
+    row.className = 'people-mgmt-row';
+
+    const mkOpts = (selId) => allRooms.map(r => {
+      const lbl = r.room_type === 'tent' ? 'Tent' : 'Room ' + r.room_number;
+      const sel = selId === 'n12' ? (n12 && r.id === n12.room.id) : (n34 && r.id === n34.room.id);
+      return `<option value="${r.id}"${sel ? ' selected' : ''}>${lbl}</option>`;
+    }).join('');
+
+    row.innerHTML = `
+      <div class="avatar ${isGirl?'av-pink':'av-blue'}" style="width:26px;height:26px;font-size:9px">${initials(person.name)}</div>
+      <span class="pmgmt-name">${person.name}${isGirl ? ' <span class="badge badge-pink">girls</span>' : ''}</span>
+      <span class="pmgmt-loc">N1–2: <b>${loc12}</b></span>
+      <span class="pmgmt-loc">N3–4: <b>${loc34}</b></span>
+      <button class="btn-edit-person">Edit</button>
+      <div class="person-edit-row" id="per-${person.name.replace(/\s+/g,'_')}">
+        <span class="pedit-label">N1–2</span>
+        <select class="pedit-select" data-ng="nights_1_2">${mkOpts('n12')}</select>
+        <span class="pedit-label">N3–4</span>
+        <select class="pedit-select" data-ng="nights_3_4">${mkOpts('n34')}</select>
+        <button class="btn-save-person">Save</button>
+        ${isGirl ? '<span class="girls-warn">⚠ Girls room — assignments locked</span>' : ''}
+      </div>`;
+
+    const editBtn = row.querySelector('.btn-edit-person');
+    const editRow = row.querySelector('.person-edit-row');
+    const saveBtn = row.querySelector('.btn-save-person');
+
+    editBtn.addEventListener('click', () => editRow.classList.toggle('open'));
+
+    saveBtn.addEventListener('click', async () => {
+      if (isGirl) { showToast('Girls room assignments are locked.'); return; }
+      saveBtn.textContent = 'Saving…';
+      saveBtn.disabled = true;
+      try {
+        const selects = row.querySelectorAll('.pedit-select');
+        for (const sel of selects) {
+          const ng = sel.dataset.ng;
+          const newRoomId = parseInt(sel.value);
+          const ngs = ng === 'nights_1_2' ? ['nights_1_2','all'] : ['nights_3_4','all'];
+          const a = allAssignments.find(x => x.person_name === person.name && ngs.includes(x.night_group));
+          if (a && a.room_id !== newRoomId) {
+            await sbFetch(`assignments?id=eq.${a.id}`, {
+              method: 'PATCH',
+              prefer: 'return=minimal',
+              noJson: true,
+              body: JSON.stringify({ room_id: newRoomId })
+            });
+          }
+        }
+        await loadAllData();
+        rerenderActiveAdminPill();
+        showToast(`${person.name.split(' ')[0]} updated.`);
+      } catch(e) {
+        showToast('Error saving. Try again.');
+        saveBtn.textContent = 'Save';
+        saveBtn.disabled = false;
+      }
+    });
+
+    container.appendChild(row);
+  }
+}
+
+// ---- UTILS ----
+function showTab(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'lookup') renderLookup(document.getElementById('lookup-input')?.value || '');
+  if (id === 'admin') { loadRequests(); showAdminTab('requests'); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ---- INIT ----
+async function init() {
+  try {
+    await loadData();
+    document.getElementById('loading').style.display = 'none';
+    const saved = localStorage.getItem('loring_user');
+    if (saved && allPersonnel.find(p => p.name === saved)) {
+      currentUser = allPersonnel.find(p => p.name === saved);
+      showApp();
+    } else {
+      document.getElementById('login-screen').classList.add('active');
+    }
+  } catch(e) {
+    document.getElementById('loading').innerHTML = `<p style="color:#ef5350">Failed to load data. Check your connection.</p>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
